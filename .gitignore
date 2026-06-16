@@ -1,0 +1,35 @@
+# OS / editor noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and caches
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# JavaScript dependencies/build output
+node_modules/
+dist/
+build/
+
+# Android generated build output
+**/.gradle/
+**/build/
+
+# Server runtime/generated data
+server_state.json
+*.tmp
+Sponsoren/*
+!Sponsoren/.gitkeep
+
+# Local TLS certificates and private keys
+certs/
+*.key
+*.pfx
+*.p12
+
+# PyInstaller
+*.spec
