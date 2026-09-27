@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Response, Depends, Header, Request, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
@@ -27,6 +27,7 @@ SPONSOR_DIR = app_data_dir() / "Sponsoren"
 SPONSOR_DIR.mkdir(parents=True, exist_ok=True)
 SPONSOR_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 STATE_FILE = app_data_dir() / "server_state.json"
+CERT_DIR = app_data_dir() / "certs"
 
 def sponsor_files() -> list[Path]:
     files = [
@@ -807,6 +808,96 @@ async def export_excel(api_key: str = Depends(verify_api_key)):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "1.0.0"}
+
+
+@app.get("/ca.cer")
+async def download_ca_cer():
+    ca_path = CERT_DIR / "ca.cer"
+    if not ca_path.exists():
+        ca_path = CERT_DIR / "ca.crt"
+    if not ca_path.exists():
+        raise HTTPException(status_code=404, detail="CA certificate not found")
+    return FileResponse(
+        ca_path,
+        media_type="application/x-x509-ca-cert",
+        filename="feldarmbrust_ca.cer",
+    )
+
+
+@app.get("/ca.crt")
+async def download_ca_crt():
+    ca_path = CERT_DIR / "ca.crt"
+    if not ca_path.exists():
+        ca_path = CERT_DIR / "ca.cer"
+    if not ca_path.exists():
+        raise HTTPException(status_code=404, detail="CA certificate not found")
+    return FileResponse(
+        ca_path,
+        media_type="application/x-x509-ca-cert",
+        filename="feldarmbrust_ca.crt",
+    )
+
+
+@app.get("/setup", response_class=HTMLResponse)
+async def setup_page(request: Request):
+    base_url = str(request.base_url).rstrip("/")
+    host = request.url.hostname or "SERVER-IP"
+    return f"""
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feldarmbrust Tablet Setup</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 0; background: #f4f7fb; color: #172033; }}
+    main {{ max-width: 860px; margin: 0 auto; padding: 28px 18px 46px; }}
+    h1 {{ margin: 0 0 12px; color: #274b7a; }}
+    h2 {{ margin: 24px 0 8px; color: #274b7a; }}
+    .panel {{ background: #fff; border: 1px solid #d8e1ee; border-radius: 8px; padding: 18px; margin: 14px 0; }}
+    .url {{ display: block; padding: 12px; background: #edf3fb; border-radius: 6px; overflow-wrap: anywhere; font-weight: 700; }}
+    .btn {{ display: inline-block; margin: 8px 8px 8px 0; padding: 12px 15px; border-radius: 6px; background: #2f6097; color: #fff; text-decoration: none; font-weight: 700; }}
+    ol {{ padding-left: 22px; }}
+    li {{ margin: 9px 0; }}
+    .small {{ color: #52627a; font-size: 14px; }}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Feldarmbrust Tablet Setup</h1>
+    <p>Diese Seite am Tablet offen lassen und die Schritte der Reihe nach ausfuehren.</p>
+
+    <section class="panel">
+      <h2>1. Zertifikat installieren</h2>
+      <p>Das Tablet muss dem lokalen Feldarmbrust-Server einmal vertrauen.</p>
+      <a class="btn" href="{base_url}/ca.cer">Tablet-Zertifikat herunterladen</a>
+      <a class="btn" href="{base_url}/ca.crt">Alternative .crt herunterladen</a>
+      <ol>
+        <li>Datei <strong>feldarmbrust_ca.cer</strong> herunterladen.</li>
+        <li>Android-Einstellungen oeffnen.</li>
+        <li><strong>Sicherheit</strong> oder <strong>Passwoerter & Sicherheit</strong> oeffnen.</li>
+        <li><strong>Verschluesselung & Anmeldedaten</strong> waehlen.</li>
+        <li><strong>Zertifikat installieren</strong> und dann <strong>CA-Zertifikat</strong> waehlen.</li>
+        <li>Die heruntergeladene Datei auswaehlen und als <strong>Feldarmbrust</strong> benennen.</li>
+      </ol>
+      <p class="small">Android kann je nach Hersteller leicht andere Menunamen anzeigen.</p>
+    </section>
+
+    <section class="panel">
+      <h2>2. App verbinden</h2>
+      <p>In der Tablet-App diese Server-URL eintragen:</p>
+      <code class="url">{base_url}</code>
+      <p class="small">Falls diese Seite ueber localhost geoeffnet wurde, am Tablet stattdessen die WLAN-IP des Laptops verwenden, z.B. <strong>https://{host}:8000</strong>.</p>
+    </section>
+
+    <section class="panel">
+      <h2>3. Passwort</h2>
+      <p>Als API Key/Passwort in der App das Passwort eintragen, das beim Start der Server-EXE angezeigt wird.</p>
+    </section>
+  </main>
+</body>
+</html>
+"""
 
 
 @app.post("/shutdown")

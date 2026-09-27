@@ -22,6 +22,8 @@ build/
 
 # Server runtime/generated data
 server_state.json
+server_config.json
+TABLET_SETUP.txt
 *.tmp
 Sponsoren/*
 !Sponsoren/.gitkeep
