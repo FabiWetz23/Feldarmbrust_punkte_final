@@ -47,11 +47,12 @@ def save_config(base_dir: str, config: dict) -> None:
 def local_ipv4_addresses() -> list[str]:
     addresses = set()
     hostname = socket.gethostname()
+    primary_address = None
 
     try:
         for value in socket.gethostbyname_ex(hostname)[2]:
             ip = ipaddress.ip_address(value)
-            if ip.version == 4 and not ip.is_loopback:
+            if ip.version == 4 and not ip.is_loopback and not ip.is_link_local:
                 addresses.add(str(ip))
     except Exception:
         pass
@@ -61,12 +62,13 @@ def local_ipv4_addresses() -> list[str]:
             sock.connect(("8.8.8.8", 80))
             value = sock.getsockname()[0]
             ip = ipaddress.ip_address(value)
-            if ip.version == 4 and not ip.is_loopback:
-                addresses.add(str(ip))
+            if ip.version == 4 and not ip.is_loopback and not ip.is_link_local:
+                primary_address = str(ip)
+                addresses.add(primary_address)
     except Exception:
         pass
 
-    return sorted(addresses)
+    return ([primary_address] if primary_address else []) + sorted(addresses - {primary_address})
 
 
 def cert_name(value: str):

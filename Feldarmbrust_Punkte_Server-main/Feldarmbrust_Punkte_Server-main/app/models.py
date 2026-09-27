@@ -118,8 +118,14 @@ class SeriesCreate(BaseModel):
 
 class ShotCreate(BaseModel):
     shot_number: int
-    score: float
+    score: float = Field(..., ge=0, le=11)
     is_inner_circle: bool = False
+
+    @validator('score')
+    def validate_score(cls, v):
+        if v * 2 != int(v * 2):
+            raise ValueError('Score value must be in 0.5 steps')
+        return v
 
 
 class CompetitionState(BaseModel):
