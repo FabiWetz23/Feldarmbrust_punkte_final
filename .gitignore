@@ -9,6 +9,7 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 .pytest_cache/
+**/.build_venv/
 
 # JavaScript dependencies/build output
 node_modules/
