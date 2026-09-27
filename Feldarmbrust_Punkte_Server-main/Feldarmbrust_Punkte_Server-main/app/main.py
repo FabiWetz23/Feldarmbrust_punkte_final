@@ -79,7 +79,7 @@ from .excel_export import export_competition_to_excel
 app = FastAPI(
     title="Field Crossbow Scoring System",
     description="Central server for wireless scoring in field crossbow competitions",
-    version="1.0.0",
+    version="1.1.0",
 )
 
 app.add_middleware(
@@ -807,7 +807,7 @@ async def export_excel(api_key: str = Depends(verify_api_key)):
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "1.0.0"}
+    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "1.1.0"}
 
 
 @app.get("/ca.cer")
